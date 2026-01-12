@@ -6,21 +6,26 @@ import RenderComponentFromString, { SplitView, View } from "../shared/components
 export const Route = createFileRoute("/code")({
   component: RouteComponent,
 });
-
+import emmet from "emmet-core";
 import AceEditor from "react-ace";
 import "ace-builds/src-noconflict/ace";
 import "ace-builds/src-noconflict/ext-searchbox";
 import "ace-builds/src-noconflict/ext-language_tools";
-// import "ace-builds/src-noconflict/mode-javascript";
+import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-tsx";
 import "ace-builds/src-noconflict/mode-jsx";
 import "ace-builds/src-noconflict/mode-typescript";
+import "ace-builds/src-noconflict/mode-html";
+
 import "ace-builds/src-noconflict/theme-dracula";
 import "ace-builds/src-noconflict/theme-monokai";
 
 import Beautify from "ace-builds/src-noconflict/ext-beautify";
+import Emmet from "ace-builds/src-noconflict/ext-emmet";
+Emmet.isSupportedMode = () => true;
 
-import { useEffect, useRef } from "react";
+Emmet.setCore(emmet);
+import { useRef } from "react";
 import { initDataEditors, newTemplate } from "../shared/utils/initData.ts";
 
 function RouteComponent() {
@@ -32,7 +37,10 @@ function RouteComponent() {
   function onChange(newValue: string) {
     setCode((prev) => ({ ...prev, [selected]: newValue }));
     errorRef.current?.resetErrorBoundary();
+    editorRef.current?.editor.execCommand("emmet:expand_abbreviation_with_tab");
+    // editorRef.current?.editor.setOption("enableEmmet", true);
   }
+  console.log({ Emmet });
 
   const onPrettier = () => {
     if (editorRef.current?.editor) {
@@ -121,16 +129,14 @@ function RouteComponent() {
 
           <AceEditor
             mode="tsx"
-            // id="my-ace"
             theme="monokai"
             value={selectedCode}
             onChange={onChange}
-            // name="UNIQUE_ID_OF_DIV"
             editorProps={{ $blockScrolling: true }}
             tabSize={tabSize}
             style={{ width: "100%", height: "calc(100% - 25px)" }}
             ref={editorRef}
-            commands={Beautify.commands}
+            commands={Emmet.commands}
             setOptions={{
               enableBasicAutocompletion: true,
               enableLiveAutocompletion: true,

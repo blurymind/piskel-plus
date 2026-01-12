@@ -26,6 +26,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "ace-builds": "^1.43.5",
     "ace-diff": "^3.0.3",
+    "emmet-core": "^1.0.0",
     "react": "^19.0.0",
     "react-ace": "^14.0.1",
     "react-dom": "^19.0.0",
