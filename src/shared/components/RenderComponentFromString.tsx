@@ -16,7 +16,7 @@ function CustomDivider(props: any) {
     <div
       className="absolute"
       style={{
-        [isHorizontal ? "left" : "top"]: props.currentSize - 30,
+        // [isHorizontal ? "left" : "top"]: props.currentSize - 30,
         zIndex: 999,
         width: props.isDragging ? window.innerWidth - 50 : 40,
         height: props.isDragging ? window.innerHeight - 50 : 40,
@@ -24,7 +24,12 @@ function CustomDivider(props: any) {
     >
       <div
         {...props}
-        style={{ ...props.style, background: "blue", width: 40 }}
+        style={{
+          ...props.style,
+          background: "blue",
+          width: 40,
+          [isHorizontal ? "left" : "top"]: props.currentSize - 30,
+        }}
         className="relative text-center rounded-sm"
       >
         {isHorizontal ? "||" : "="}
