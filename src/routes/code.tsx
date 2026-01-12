@@ -24,6 +24,7 @@ function RouteComponent() {
   console.log(errorRef?.current);
   const onChangeSelected = (ev) => {
     setSelected(ev.target.value);
+    errorRef.current?.resetErrorBoundary();
   };
   const onAddNew = () => {
     const ask = window.prompt("Add new code?", "NewFrame.tsx");
@@ -51,6 +52,7 @@ function RouteComponent() {
   };
 
   const selectedCode = code[selected];
+  console.log({ selectedCode, selected });
   return (
     <div className="flex flex-1 h-full">
       {/*<ResizablePane minSize={20} initialSize={50} maxSize={80} isVertical={false}>*/}

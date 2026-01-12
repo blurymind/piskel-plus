@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { initDataEditors } from "../shared/utils/initData.ts";
 import RenderComponentFromString from "../shared/components/RenderComponentFromString.tsx";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 
 export const Route = createFileRoute("/editors")({
   component: RouteComponent,
@@ -14,6 +14,10 @@ function RouteComponent() {
   console.log({ code });
   const [selected, onSelect] = useLocalStorage<string>("selectedEditorTab", "piskel");
   const selectedCode = code[selected];
+  console.log({ selected, code });
+  useEffect(() => {
+    errorRef.current?.resetErrorBoundary();
+  }, [selected]);
   return (
     <div className="flex flex-1 h-full w-full flex-col">
       <div className="flex gap-3 border-b-amber-600 border-b-1 p-2">
