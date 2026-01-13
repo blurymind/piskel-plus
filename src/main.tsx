@@ -11,16 +11,17 @@ import { routeTree } from "./routeTree.gen";
 
 export const queryClient = new QueryClient();
 
+const globalClass = "bg-gray-200 text-gray-800";
 // Create a new router instance
 export const router = createRouter({
   routeTree,
   defaultPendingComponent: () => (
-    <div className={`p-2 text-2xl font-bold`}>
+    <div className={`p-2 text-2xl font-bold ${globalClass}`}>
       <span>Loading...</span>
     </div>
   ),
   defaultErrorComponent: ({ error }) => (
-    <div className={`p-2 text-2xl font-bold text-red-500`}>
+    <div className={`p-2 text-2xl font-bold text-red-500 ${globalClass}`}>
       <span>Error: {error.message}</span>
     </div>
   ),

@@ -15,6 +15,15 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     <>
       <div className="p-2 flex gap-2 text-lg border-b">
         <Link
+          to="/files"
+          activeProps={{
+            className: "font-bold",
+          }}
+          activeOptions={{ exact: true }}
+        >
+          Files
+        </Link>{" "}
+        <Link
           to="/"
           activeProps={{
             className: "font-bold",

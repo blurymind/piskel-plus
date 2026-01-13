@@ -1,6 +1,194 @@
 @import "tailwindcss";
 @plugin "daisyui";
+@import "@cubone/react-file-manager/dist/style.css";
 
 body > div {
-    height: 90vh !important;
+  height: 90vh !important;
+  /*background: #245e8f;*/
+  /*color: wheat;*/
 }
+
+/*@plugin 'tailwindcss-animate';*/
+
+@layer base {
+    html,
+    body {
+        user-select: none;
+        scroll-behavior: smooth;
+        -webkit-app-region: no-drag;
+        -webkit-font-smoothing: antialiased;
+    }
+
+    /* scrollbar */
+    ::-webkit-scrollbar {
+        width: 5px;
+        height: 5px;
+        margin: 3px;
+    }
+
+
+    ::-webkit-scrollbar-track {
+        -webkit-box-shadow: inset 0 0 6px rgba(104, 104, 104, 0.3);
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background-color: rgba(255, 255, 255, 0.233);
+        margin: 3px;
+        opacity: 0.2;
+    }
+    ::-webkit-scrollbar-track:hover {
+        opacity: 1;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        -webkit-border-radius: 10px;
+        border-radius: 10px;
+        background: rgba(255, 255, 255, 0.849);
+        -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.5);
+    }
+
+    ::-webkit-scrollbar-thumb:window-inactive {
+        background: rgba(255, 255, 255, 0.911);
+    }
+
+    /* Resizer */
+    ::-webkit-resizer {
+        border: 5px solid rgb(0, 0, 0);
+        background: rgb(0, 0, 0);
+        /* box-shadow: 0 0 2px 5px red; */
+        outline: 2px dashed rgb(110, 110, 110);
+
+        /*size does not work*/
+    }
+
+
+    /*select {*/
+    /*    outline:none; !* remove focus ring from Webkit *!*/
+    /*    line-height: 1.2;*/
+    /*    background-color: rgba(0,0,0,0.7);*/
+    /*    border-radius: 3px;*/
+    /*    color:white;*/
+    /*    border:0;*/
+    /*}*/
+}
+
+
+/* Slide Left Transition */
+html:active-view-transition-type(slide-left) {
+    &::view-transition-old(main-content) {
+        animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-out-left;
+    }
+    &::view-transition-new(main-content) {
+        animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-in-left;
+    }
+}
+
+@keyframes slide-out-left {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+@keyframes slide-in-left {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Slide Right Transition */
+html:active-view-transition-type(slide-right) {
+    &::view-transition-old(main-content) {
+        animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-out-right;
+    }
+    &::view-transition-new(main-content) {
+        animation: 300ms cubic-bezier(0.4, 0, 0.2, 1) both slide-in-right;
+    }
+}
+
+@keyframes slide-out-right {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes slide-in-right {
+    from {
+        transform: translateX(-100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Warp/Rotate Transition */
+html:active-view-transition-type(warp) {
+    &::view-transition-old(post) {
+        animation: 400ms ease-out both warp-out;
+    }
+
+    &::view-transition-new(post) {
+        animation: 400ms ease-out both warp-in;
+    }
+}
+
+@keyframes warp-out {
+    from {
+        opacity: 1;
+        filter: blur(0) brightness(1);
+        transform: scale(1) rotate(0deg);
+    }
+    to {
+        opacity: 0;
+        filter: blur(15px) brightness(1.8);
+        transform: scale(1.1) rotate(90deg);
+    }
+}
+
+@keyframes warp-in {
+    from {
+        opacity: 0;
+        filter: blur(15px) brightness(1.8);
+        transform: scale(0.9) rotate(-45deg);
+    }
+    to {
+        opacity: 1;
+        filter: blur(0) brightness(1);
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+/*.react-select__control,*/
+/*.react-select__menu,*/
+/*.react-select__option,*/
+/*.react-select__menu-list,*/
+/*.react-select__control {*/
+/*    background-color: transparent !important;*/
+/*}*/
+/*.react-select__menu-list {*/
+/*    display: flex;*/
+/*    flex-wrap: wrap;*/
+/*    gap: 2px;*/
+/*}*/
+/*.react-select__multi-value {*/
+/*    border-radius: 6px;*/
+/*    background-color: rgba(0, 0, 0, 0.37) !important;*/
+/*}*/
+/*.react-select__input-container{*/
+/*    color: white !important;*/
+/*}*/
+/*.react-select__option,*/
+/*.react-select__multi-value__label{*/
+/*    padding: 1px 3px !important;*/
+/*}*/
+/*.react-select__control--is-focused{*/
+/*    border-color: rgba(255, 255, 255, 0.31) !important;*/
+/*    box-shadow:  none !important;*/
+/*}*/
