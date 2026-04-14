@@ -40,7 +40,7 @@ declare module "@tanstack/react-router" {
     router: typeof router;
   }
 }
-//eh
+//danna <3
 createRoot(document.getElementById("root")!).render(
      <App />
      
