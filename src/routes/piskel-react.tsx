@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { PiskelReact } from "../shared/components/piskel-react/PiskelReact.tsx";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/piskel-react")({
   component: RouteComponent,
 });
 
