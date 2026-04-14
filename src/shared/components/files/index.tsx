@@ -37,11 +37,11 @@ export const Index = () => {
   const [selectedGitFile, setSelectedGitFile] = useLocalStorage("selectedGitFile", {});
   const [selectedGitFileBlob, setSelectedGitFileBlob] = useState(null);
   const [selectedGitFileBase64, setSelectedGitFileBase64] = useState(null);
-
-  const options = gitRepos.map((r) => ({ label: r.full_name, value: r }));
+  console.log({ gitRepos });
+  const options = gitRepos.status ? []:gitRepos.map((r) => ({ label: r.full_name, value: r }));
   const onChangeEventTarget = (setState) => (ev) => setState(ev.target.value);
-
-  console.log({ gitRepo });
+  const isValidRepo = gitRepoFiles?.status !== '401' && gitRepos
+ 
   return (
     <div className="w-full h-full bg-gray-800">
       <div>
@@ -72,6 +72,7 @@ export const Index = () => {
           <button
             onClick={() => {
               requestUserRepos(gitOwner, gitToken).then((repos) => {
+                console.log({repos})
                 setGitRepos(repos);
               });
             }}
@@ -100,6 +101,7 @@ export const Index = () => {
         {/*  ))}*/}
         {/*</div>*/}
       </div>
+      {isValidRepo ? (
       <TreeView
         gitRepoFiles={gitRepoFiles}
         selectedGitFile={selectedGitFile}
@@ -119,6 +121,8 @@ export const Index = () => {
           });
         }}
       />
+      ): <div>{gitRepoFiles.status}</div>}
+
       <Viewer
         path={selectedGitFile.path}
         size={selectedGitFile.size}

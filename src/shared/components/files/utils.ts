@@ -169,10 +169,11 @@ function createNode(path: string[], file: any, tree: TreeNode[]): void {
 
 export const pathListToTree = (data: Array<{ path: string; data: any }>): TreeNode[] => {
   const tree: TreeNode[] = [];
+  if(!data) return []
   for (let i = 0; i < data.length; i++) {
     const file = data[i];
-    const path: string = file.path;
-    const split: string[] = path.split("/");
+    const path: string = file?.path ?? "";
+    const split: string[] = path?.split("/");
     createNode(split, file, tree);
   }
   return tree;

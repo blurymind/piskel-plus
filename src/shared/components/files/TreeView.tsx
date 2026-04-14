@@ -9,6 +9,7 @@ import { useLocalStorage } from "@uidotdev/usehooks";
 
 const DTreeView = ({ gitRepoFiles, onSelectFile = () => {}, selectedGitFile }) => {
   const data = useMemo(() => {
+    console.log({gitRepoFiles})
     const converted = pathListToTree(gitRepoFiles.tree);
     const data = flattenTree({ name: "", children: converted });
     return data;
