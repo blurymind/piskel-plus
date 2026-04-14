@@ -52,7 +52,7 @@ export const PiskelReact = ({
   piskelFile,
   hideHeader = true,
 }) => {
-    const [editedPiskel, setEditedPiskel] = useLocalStorage("editedPiskel", sprites.mario);
+    const [editedPiskel, setEditedPiskel] = useLocalStorage("editedPiskel", null);
   const piskelRef = useRef(null);
 
   const getPiskel = () => piskelRef.current?.contentWindow?.pskl;
@@ -111,7 +111,7 @@ export const PiskelReact = ({
       }
       innerDoc?.querySelector(".fake-piskelapp-header")?.remove();
     }
-    loadSprite(piskelFile ?? editedPiskel ?? sprites.megaman);
+    loadSprite(editedPiskel ?? piskelFile ?? sprites.megaman);
   };
 
   // todo onSave callback
