@@ -90,8 +90,9 @@ out
 
 # vuepress build output
 .vuepress/dist
-.dist/
 dist
+.vscode
+.idea
 # vuepress v2.x temp and cache directory
 .temp
 .cache
