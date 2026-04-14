@@ -15,7 +15,6 @@ import { Route as CodeRouteImport } from './routes/code'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedProtectedRouteRouteImport } from './routes/_authenticated/protected-route'
 
 const FilesRoute = FilesRouteImport.update({
   id: '/files',
@@ -46,12 +45,6 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedProtectedRouteRoute =
-  AuthenticatedProtectedRouteRouteImport.update({
-    id: '/protected-route',
-    path: '/protected-route',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -59,7 +52,6 @@ export interface FileRoutesByFullPath {
   '/code': typeof CodeRoute
   '/editors': typeof EditorsRoute
   '/files': typeof FilesRoute
-  '/protected-route': typeof AuthenticatedProtectedRouteRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -67,29 +59,21 @@ export interface FileRoutesByTo {
   '/code': typeof CodeRoute
   '/editors': typeof EditorsRoute
   '/files': typeof FilesRoute
-  '/protected-route': typeof AuthenticatedProtectedRouteRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/_authenticated': typeof AuthenticatedRouteWithChildren
+  '/_authenticated': typeof AuthenticatedRoute
   '/about': typeof AboutRoute
   '/code': typeof CodeRoute
   '/editors': typeof EditorsRoute
   '/files': typeof FilesRoute
-  '/_authenticated/protected-route': typeof AuthenticatedProtectedRouteRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/about'
-    | '/code'
-    | '/editors'
-    | '/files'
-    | '/protected-route'
+  fullPaths: '/' | '/about' | '/code' | '/editors' | '/files'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/about' | '/code' | '/editors' | '/files' | '/protected-route'
+  to: '/' | '/about' | '/code' | '/editors' | '/files'
   id:
     | '__root__'
     | '/'
@@ -98,12 +82,11 @@ export interface FileRouteTypes {
     | '/code'
     | '/editors'
     | '/files'
-    | '/_authenticated/protected-route'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
+  AuthenticatedRoute: typeof AuthenticatedRoute
   AboutRoute: typeof AboutRoute
   CodeRoute: typeof CodeRoute
   EditorsRoute: typeof EditorsRoute
@@ -154,31 +137,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/protected-route': {
-      id: '/_authenticated/protected-route'
-      path: '/protected-route'
-      fullPath: '/protected-route'
-      preLoaderRoute: typeof AuthenticatedProtectedRouteRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
   }
 }
 
-interface AuthenticatedRouteChildren {
-  AuthenticatedProtectedRouteRoute: typeof AuthenticatedProtectedRouteRoute
-}
-
-const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedProtectedRouteRoute: AuthenticatedProtectedRouteRoute,
-}
-
-const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
-  AuthenticatedRouteChildren,
-)
-
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AuthenticatedRoute: AuthenticatedRouteWithChildren,
+  AuthenticatedRoute: AuthenticatedRoute,
   AboutRoute: AboutRoute,
   CodeRoute: CodeRoute,
   EditorsRoute: EditorsRoute,
