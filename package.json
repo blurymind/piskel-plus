@@ -4,9 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "engines": {
-    "npm": "please-use-yarn",
-    "node": "22",
-    "yarn": ">=1.22.22"
+    "npm": "please-use-yarn"
   },
   "scripts": {
     "dev": "vite --port 3000",
@@ -14,9 +12,7 @@
     "preview": "vite preview",
     "lint": "biome lint ./src",
     "format": "biome check --write ./src",
-    "format:ci": "biome ci",
-    "predeploy": "yarn run build",
-    "deploy": "gh-pages -d dist"
+    "format:ci": "biome ci"
   },
   "dependencies": {
     "@babel/standalone": "^7.28.5",
