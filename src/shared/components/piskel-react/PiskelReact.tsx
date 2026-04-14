@@ -127,6 +127,7 @@ export const PiskelReact = ({
   // todo onSave callback is needed to get the data out and use it elsewhere
   return (
     <div style={{ height: "100%" }}>
+      <div className="absolute" onClick={onSavePiskel}>save</div>
       <iframe
         width="100%"
         height="100%"
