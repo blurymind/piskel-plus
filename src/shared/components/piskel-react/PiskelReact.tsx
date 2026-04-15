@@ -73,7 +73,7 @@ export const PiskelReact = ({
     });
     setCurrentName(sprite.piskel.name)
     console.log({ app, fps });
-  }, []);
+  }, [setCurrentName]);
 
   // todo https://github.com/4ian/GDevelop/blob/94b980313b7ac851610e12a55f767dcfc3316d4c/newIDE/app/public/external/piskel/piskel-main.js#L122
   const onSavePiskel = () => {
@@ -159,7 +159,10 @@ const createEmptyAnimation = () => {
 
   const onSelectFile = item => {
     onSavePiskel()
-    loadSprite(item.src)
+    setTimeout(()=> {
+      loadSprite(item.src)
+    }, 400)
+
   }
 
   const onCloseFile = (sprite) => {
@@ -186,17 +189,16 @@ const createEmptyAnimation = () => {
 
   return (
     <div style={{ height: "100%" }}>
-
-      <div className="absolute top-10 rounded-sm w-20 hover:w-40 overflow-hidden h-50 bg-gray-600" >
-        <div className="p-2 w-full bg-gray-700" style={{whiteSpace: "nowrap"}}>{currentName}</div>
+      <div className="absolute top-10 rounded-sm w-20 overflow-hidden h-50 bg-gray-600/20" >
+        <div className="p-2 w-full bg-gray-700" style={{whiteSpace: "nowrap"}} title={currentName}>{currentName}</div>
         <div className="flex flex-1 gap-3 m-2 flex-col">
+          <button className="hover:bg-gray-500" onClick={onSavePiskel}>Save</button>
           <button className="hover:bg-gray-500" onClick={createEmptyAnimation}>New</button>
-          <button className="hover:bg-gray-500" onClick={onSavePiskel}>Save</button> 
         </div>
 
       </div>
       <div className="absolute m-2"> 
-          <Menu onClose={onCloseFile} onSelect={onSelectFile} label="Open" items={Object.values(piskels)} /> 
+          <Menu selected={currentName} onClose={onCloseFile} onSelect={onSelectFile} label="Open" items={Object.values(piskels)} /> 
       </div>
 
       <iframe
