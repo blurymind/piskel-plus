@@ -1,22 +1,15 @@
 import { memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
-
+import  Jszip from "jszip"
 import "./index.css";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import Menu from "../Menu"
+
+const zip = new Jszip()
+import { FileUploader } from "react-drag-drop-files";
+
+const fileTypes = ["ZIP"];
+
 const sprites = {
-  megaman: {
-    modelVersion: 2,
-    piskel: {
-      name: "Megaman moving",
-      description: "",
-      fps: 2,
-      height: 28,
-      width: 31,
-      layers: [
-        '{"name":"Layer 1","frameCount":3,"base64PNG":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAF0AAAAcCAYAAAADdbMKAAACi0lEQVRoQ+2Yu3HDMAyG6SoaI2XmSJE5MoY7253HyBwpMkdKj8FUzvEBCgTfEgn5EqnyWRR+8gMIAjyI/WEncGBX3AXFGuh3xG+NnSVu2Eq7i+4SWE748mV+nl61mSW2WoFvpd1VtxXUXRzlDOo6CUbwW2l3122B7osD+utEo7XFZm2kb6U9RLcFUHICLto/f4QwTmixWwN+K+0hurVw7grsSUGNPRDtKvX0h76V9jDdEnTvAAHo8v0sxPPZ4Z/sT3kWYpq6RXpaGzl++jDiak7Ty7XHLhu+5hR0LYwPSYh0DNwCFvL7qBcspewBPa+dSUYrobOtOQZdbyv66LLwKHVEQZRXQqfGcrurqG3BuumBwxM9Q612UbfnmikAfXBc3p7y0NVblF7EzTri5rb4/D0pMTMNVb12ItqpQ2h5m3QM85qj0GFyCr6KcK8Wt9Geizg6HjsR7EUaKq9SYNRm181C15WIrUgwSLWl6aOcQNMSpCRvLLJJSsugCWHSZteN5nS3LQGQohZ2nx7L3DngBvqN1CNpz+AZ1pyuXnAuJtBjKdWmC/pK2a89zODbsCFBDh+ozaabrSRwxMciGQAMuPDyIo9Rm0W3rjmyUZ+savq3/cqfZofwaw/XLUE3i6epBu/x/m0/tr6V9lDdEvTs/QOUdQMuuLSzc/c9A7WH61Z3h/Syi9bencF7HSKjNotutnqhORwqFHywOSD90ky0M2XQZtMNmyN0eKmfAJ5UKNHyamW0ewfYX9YG6MGCgy7Sr1DCLm7+oHRO0FL732mb5qWtOmkdn7ie0n+32mod/5DasY4xNlEcveG9b/hFbbS32modn4eee2veDVl3LZzy9PYR1QR26NWo+g38BXXvWDvG9IC5AAAAAElFTkSuQmCC"}',
-      ],
-    },
-  },
   sonic: {
     modelVersion: 2,
     piskel: {
@@ -213,8 +206,36 @@ const createEmptyAnimation = () => {
     });
  
   }
+
+//  todo https://stuk.github.io/jszip/documentation/api_jszip/load_async.html
+  const handleDropFile = (inFile) => {
+    console.log(file);
+    const reader = new FileReader();
+    reader.addEventListener("load", () => {
+      console.log("LOADED" , reader)
+      // convert image file to base64 string
+      // preview.src = reader.result;
+      //data:application/zip;base64,UEsDB
+      zip.loadAsync(reader.result.split(",")[1], {base64: true}).then(zipData=>{
+        console.log({zipData})
+        const filesInZip = zipData.files;
+        zipData.files.forEach(frame=>{
+          console.log({frame, asData: frame.asText()})
+        })
+      })
+    });
+    if (inFile) {
+      reader.readAsDataURL(inFile);
+    }
+  }
+ 
   return (
     <div style={{ height: "100%" }}>
+      <div className="absolute left-20 bg-amber-200" onDrag={console.log}>
+        <FileUploader handleChange={handleDropFile} name="file" types={fileTypes} />
+
+      </div>
+
       <div className="absolute top-0 p-2 bg-gray-700 w-23 overflow-hidden" style={{whiteSpace: "nowrap"}} title={currentName}>{currentName}</div>
 
       <div className="absolute top-20 rounded-sm w-20 overflow-hidden h-50 bg-gray-600/20" >
