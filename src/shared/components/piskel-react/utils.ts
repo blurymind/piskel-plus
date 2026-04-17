@@ -1,147 +1,167 @@
 import { useCallback } from "react";
 
 //https://blurymind.github.io/piskel-react
-export const getNewPiskelTemplate = (name: string) => (
-{
-    "modelVersion": 2,
-    "piskel": {
+export const getNewPiskelTemplate = (name: string) => ({
+  modelVersion: 2,
+  piskel: {
+    name,
+    description: "Created in https://blurymind.github.io/piskel-react",
+    fps: 1,
+    height: 32,
+    width: 32,
+    layers: [
+      '{"name":"Layer 1","opacity":1,"frameCount":1,"chunks":[{"layout":[[0]],"base64PNG":"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAqCAYAAADBNhlmAAAAAXNSR0IArs4c6QAAAFpJREFUWEft0rENADAIBDHYf2mGcENx6V9Czu08f/v8vulA/aEEE1QB3ddggiqg+xpMUAV0X4MJqoDuazBBFdB9DSaoArqvwQRVQPc1mKAK6L4GE1QB3degCh5SbwArS8HI/AAAAABJRU5ErkJggg=="}]}',
+    ],
+    hiddenFrames: [],
+  },
+});
+export const usePiskel = ({ piskelRef }) => {
+  const getPiskel = () => piskelRef.current?.contentWindow?.pskl;
+
+  const loadPSprite = useCallback((sprite) => {
+    const pskl = getPiskel();
+    if (!pskl || !sprite) return;
+    const app = pskl.app;
+    const fps = sprite.piskel.fps;
+    const piskel = sprite.piskel;
+    const descriptor = new pskl.model.piskel.Descriptor(
+      piskel.name,
+      piskel.description,
+      true,
+    );
+    pskl.utils.serialization.Deserializer.deserialize(
+      sprite,
+      function (piskel) {
+        piskel.setDescriptor(descriptor);
+
+        app.piskelController.setPiskel(piskel);
+        // app.previewController.previewActionsController.piskelController.setFPS(fps);
+      },
+    );
+  }, []);
+
+  const getPiskelData = () => {
+    const pskl = getPiskel();
+    if (!pskl) return { data: null, name: "" };
+    const piskelData = pskl.app.piskelController.getPiskel();
+    const piskelState =
+      pskl.utils.serialization.Serializer.serialize(piskelData);
+
+    const piskelDataParsed = JSON.parse(piskelState);
+    return piskelDataParsed;
+  };
+  const savePiskel = () => {
+    const pskl = getPiskel();
+    if (!pskl) return { data: null, name: "" };
+    const piskelData = pskl.app.piskelController.getPiskel();
+    const piskelState =
+      pskl.utils.serialization.Serializer.serialize(piskelData);
+
+    const piskelDataParsed = JSON.parse(piskelState);
+
+    console.log("saved", { piskelDataParsed });
+    return { src: piskelDataParsed, name: piskelDataParsed.piskel.name };
+  };
+  const initPiskelApp = (hideHeader) => {
+    const innerDoc =
+      piskelRef.current?.contentDocument ||
+      piskelRef.current?.contentWindow.document;
+    innerDoc?.getElementById("dialog-container-wrapper")?.remove();
+    innerDoc?.querySelector(".new-piskel-desktop")?.remove();
+    if (hideHeader) {
+      const wrapper = innerDoc.getElementById("main-wrapper");
+      if (wrapper) {
+        wrapper.style.top = "0px";
+        wrapper.style.marginTop = "0px";
+      }
+      innerDoc?.querySelector(".fake-piskelapp-header")?.remove();
+    }
+  };
+  const openSettings = () => {
+    setTimeout(() => {
+      const pskl = getPiskel();
+      if (!pskl) return;
+      pskl.app.settingsController.settingsContainer
+        .getElementsByClassName("tool-icon  icon-settings-resize-white")[0]
+        .click(); // call resize window
+      pskl.app.settingsController.settingsContainer
+        .getElementsByClassName("textfield resize-size-field")[0]
+        .focus();
+    });
+  };
+  const createNewPiskel = (name) => {
+    const piskelData = getNewPiskelTemplate(name);
+    loadPSprite(piskelData);
+  };
+
+  const loadZippedImageFramesIntoPiskel = (
+    { imageData, maxWidth, maxHeight },
+    name,
+  ) => {
+    const pskl = getPiskel();
+    const piskelFile =
+      pskl.service.ImportService.prototype.createPiskelFromImages_(
+        imageData,
         name,
-        "description": "Created in https://blurymind.github.io/piskel-react",
-        "fps": 1,
-        "height": 32,
-        "width": 32,
-        "layers": [
-            "{\"name\":\"Layer 1\",\"opacity\":1,\"frameCount\":1,\"chunks\":[{\"layout\":[[0]],\"base64PNG\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACgAAAAqCAYAAADBNhlmAAAAAXNSR0IArs4c6QAAAFpJREFUWEft0rENADAIBDHYf2mGcENx6V9Czu08f/v8vulA/aEEE1QB3ddggiqg+xpMUAV0X4MJqoDuazBBFdB9DSaoArqvwQRVQPc1mKAK6L4GE1QB3degCh5SbwArS8HI/AAAAABJRU5ErkJggg==\"}]}"
-        ],
-        "hiddenFrames": []
-    }
-}
-)
-export const usePiskel = ({piskelRef}) => {
-    const getPiskel = () => piskelRef.current?.contentWindow?.pskl;
+        maxWidth,
+        maxHeight,
+        false,
+      );
+    const piskelController = pskl.app.piskelController;
+    // cb(piskelFile)
+    piskelController.setPiskel(piskelFile, {});
+  };
+  return {
+    loadPSprite,
+    getPiskel,
+    savePiskel,
+    initPiskelApp,
+    createNewPiskel,
+    loadZippedImageFramesIntoPiskel,
+    getPiskelData,
+    openSettings,
+  };
+};
 
-    const loadPSprite = useCallback((sprite) => {
-        const pskl = getPiskel();
-        if (!pskl || !sprite) return;
-        const app = pskl.app;
-        const fps = sprite.piskel.fps;
-        const piskel = sprite.piskel;
-        const descriptor = new pskl.model.piskel.Descriptor(piskel.name, piskel.description, true);
-        pskl.utils.serialization.Deserializer.deserialize(sprite, function (piskel) {
-            piskel.setDescriptor(descriptor);
-        
-            app.piskelController.setPiskel(piskel);
-            // app.previewController.previewActionsController.piskelController.setFPS(fps);
+export const getImagesFromZip = (zipData) => {
+  const frames = zipData.files;
+  const imageData = [];
+  let maxWidth = -1;
+  let maxHeight = -1;
+  return Promise.all(
+    Object.keys(frames)
+      .filter((key) => key.toLocaleLowerCase().endsWith(".png"))
+      .sort()
+      .map((key) => {
+        return new Promise((resolve) => {
+          const resource = frames[key];
+          const image = new Image();
+          image.onload = () => {
+            imageData.push(image);
+            maxWidth = Math.max(image.width, maxWidth);
+            maxHeight = Math.max(image.height, maxHeight);
+            resolve(key);
+          };
+          image.onerror = (event) => {
+            console.error("Unable to load ", resource, event);
+            resolve(key);
+          };
+
+          try {
+            resource.async("blob").then((blob) => {
+              const imageUrl = URL.createObjectURL(blob);
+              console.log({ blob, imageUrl });
+              image.src = imageUrl;
+            });
+          } catch (error) {
+            // Unable to load the image, ignore it.
+            console.error("Unable to load ", resource, error);
+            resolve(key);
+          }
         });
-    }, [])
-   
-    const getPiskelData = () => {
-        const pskl = getPiskel();
-        if (!pskl) return {data: null, name: ""};
-        const piskelData = pskl.app.piskelController.getPiskel();
-        const piskelState = pskl.utils.serialization.Serializer.serialize(piskelData)
-    
-        const piskelDataParsed = JSON.parse(piskelState)
-        return piskelDataParsed
-    }
-    const savePiskel = () => {
-        const pskl = getPiskel();
-        if (!pskl) return {data: null, name: ""};
-        const piskelData = pskl.app.piskelController.getPiskel();
-        const piskelState = pskl.utils.serialization.Serializer.serialize(piskelData)
-    
-        const piskelDataParsed = JSON.parse(piskelState)
-
-        console.log("saved", {piskelDataParsed})
-        return {src:piskelDataParsed, name: piskelDataParsed.piskel.name}
-    }
-    const initPiskelApp = (hideHeader) => {
-        const innerDoc = piskelRef.current?.contentDocument || piskelRef.current?.contentWindow.document;
-        innerDoc?.getElementById("dialog-container-wrapper")?.remove();
-        innerDoc?.querySelector(".new-piskel-desktop")?.remove();
-        if (hideHeader) {
-        const wrapper = innerDoc.getElementById("main-wrapper");
-        if (wrapper) {
-            wrapper.style.top = "0px";
-            wrapper.style.marginTop = "0px";
-        }
-        innerDoc?.querySelector(".fake-piskelapp-header")?.remove();
-        }
-     };
-     const openSettings = () => {
-        setTimeout(()=> {
-            const pskl = getPiskel();
-            if (!pskl) return;
-            pskl.app.settingsController.settingsContainer
-                .getElementsByClassName('tool-icon  icon-settings-resize-white')[0]
-                .click(); // call resize window
-            pskl.app.settingsController.settingsContainer
-                .getElementsByClassName('textfield resize-size-field')[0]
-                .focus();    
-        })
-     }
-    const createNewPiskel = (name) => {
-        const piskelData = getNewPiskelTemplate(name)
-        loadPSprite(piskelData)
-    };
-
-    const loadZippedImageFramesIntoPiskel = ({imageData, maxWidth,maxHeight}, name) => {
-        const pskl = getPiskel();
-        const piskelFile = pskl.service.ImportService.prototype.createPiskelFromImages_(
-            imageData,
-            name,
-            maxWidth,
-            maxHeight,
-            false
-        );
-        const piskelController = pskl.app.piskelController;
-        // cb(piskelFile)
-        piskelController.setPiskel(piskelFile, {});
-    }
-    return {loadPSprite, getPiskel, savePiskel, initPiskelApp, createNewPiskel, 
-        loadZippedImageFramesIntoPiskel, getPiskelData, openSettings}
-}
-
-export const getImagesFromZip = (zipData)=> {
-      const frames = zipData.files;
-      const imageData = [] 
-      let maxWidth = -1;
-      let maxHeight = -1
-    return Promise.all(
-            Object.keys(frames)
-            .filter(key=> key.toLocaleLowerCase().endsWith(".png"))
-            .sort()
-            .map(key => {
-               return new Promise((resolve)=> {
-                const resource = frames[key]
-                const image = new Image();
-                image.onload = () => {
-        
-                    imageData.push(image);
-                    maxWidth = Math.max(image.width, maxWidth);
-                    maxHeight = Math.max(image.height, maxHeight);
-                    resolve(key);
-                };
-                image.onerror = event => {
-                    console.error('Unable to load ', resource, event);
-                    resolve(key);
-                };
-
-                try {
-                    resource.async("blob").then(blob=> {
-                        const imageUrl = URL.createObjectURL(blob)
-                        console.log({blob, imageUrl})
-                        image.src = imageUrl;
-                    })
-                } catch (error) {
-                    // Unable to load the image, ignore it.
-                    console.error('Unable to load ', resource, error);
-                    resolve(key);
-                }
-                })
-            })
-        ).then(()=> ({imageData, maxWidth,maxHeight}))
-}
+      }),
+  ).then(() => ({ imageData, maxWidth, maxHeight }));
+};
 export const sprites = {
   sonic: {
     modelVersion: 2,
@@ -170,6 +190,3 @@ export const sprites = {
     },
   },
 };
-
-
- 
