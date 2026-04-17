@@ -23,7 +23,9 @@ export const FileImport = ({ onCancel, onImport }) => {
 
   const handleDropFile = (inFiles) => {
     console.log(Object.values(inFiles));
-    const firstFile = Object.values(inFiles).find((file) => file?.name?.toLowerCase().endsWith(".png"));
+    const firstFile = Object.values(inFiles).find(
+      (file) => file?.name?.toLowerCase().endsWith(".png") || file?.name?.toLowerCase().endsWith(".zip"),
+    );
     if (!firstFile) {
       return;
     }
