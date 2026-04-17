@@ -1,8 +1,6 @@
-import Jszip from "jszip";
 import { memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import "./index.css";
 import { useLocalStorage } from "@uidotdev/usehooks";
-import { FileUploader } from "react-drag-drop-files";
 import { Popover } from "react-tiny-popover";
 import Menu from "../Menu";
 import FileImport from "./file-import";
@@ -57,7 +55,7 @@ export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref
       // loadSprite(editedPiskel);
     }
     const onPointerUp = (e) => {
-      console.log("DRAG", e);
+      console.log(e);
     };
     window.addEventListener("mouseup", onPointerUp);
     return () => {
@@ -206,7 +204,12 @@ export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref
             </div>
           }
         >
-          <div className="p-2" onClick={() => setIsImporterOpen(!isImporterOpen)}>
+          <div
+            className="p-2"
+            onPointerEnter={() => setIsImporterOpen(true)}
+            onClick={() => setIsImporterOpen(!isImporterOpen)}
+            onDragEnter={() => setIsImporterOpen(true)}
+          >
             [Import]
           </div>
         </Popover>

@@ -1,19 +1,18 @@
+import { useLocalStorage } from "@uidotdev/usehooks";
 import Jszip from "jszip";
-import { memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { memo, useCallback, useRef, useState } from "react";
 import { FileUploader } from "react-drag-drop-files";
 import { SpriteAnimator } from "react-sprite-animator";
-
-// todo add image sequence
-const fileTypes = ["ZIP", "PNG"];
-
+import { ToastContainer, toast } from "react-toastify";
+import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { createSheetFromImages, getImagesFromFiles } from "./utils";
 
-const buttonClass = "border-1 border-gray-400 px-2 rounded-sm hover:bg-gray-400/50";
+const buttonClass = "border-1 border-gray-400 px-2 rounded-sm opacity-70 hover:opacity-90";
 export const FileImport = ({ onCancel, onImport }) => {
   const spritePrevRef = useRef(null);
   const [newFileName, setNewFileName] = useState("");
   const [draggedFiles, setDraggedFiles] = useState(null);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useLocalStorage("zoomLevelImport", 1);
   const [fps, setFps] = useState(12);
 
   const onConfirmDraggedFile = () => {
@@ -21,6 +20,7 @@ export const FileImport = ({ onCancel, onImport }) => {
   };
 
   const handleDropFile = (inFiles) => {
+    console.log({ inFiles });
     const firstFile = inFiles[0];
     const reader = new FileReader();
     const [fileName, extension] = firstFile.name.split(".");
@@ -30,6 +30,7 @@ export const FileImport = ({ onCancel, onImport }) => {
       reader.addEventListener("load", () => {
         const zip = new Jszip();
         zip.loadAsync(reader.result.split(",")[1], { base64: true }).then((zipData) => {
+          console.log({ zipData });
           getImagesFromFiles(zipData.files).then(({ imageFrames, maxWidth, maxHeight }) => {
             setNewFileName(fileName);
             if (imageFrames.length === 0) return;
@@ -46,9 +47,12 @@ export const FileImport = ({ onCancel, onImport }) => {
         const spriteSheet = createSheetFromImages(imageFrames);
         setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet });
       });
+    } else {
+      toast.warn("Please drop multiple PNG files or a zip archive containing them", { position: "bottom-left" });
     }
 
-    if (firstFile && extension.toLowerCase() === "zip") {
+    if (firstFile) {
+      console.log({ firstFile });
       reader.readAsDataURL(firstFile);
     }
   };
@@ -65,6 +69,7 @@ export const FileImport = ({ onCancel, onImport }) => {
 
   return (
     <div
+      onDragEnter={() => setDraggedFiles(null)}
       style={{ maxWidth: "90vw", maxHeight: "95vh", minWidth: 100, minHeight: 100 }}
       className="w-full h-full bg-gray-900/80 hover:bg-gray-900/90 overflow-hidden rounded-md p-2 border-1 border-gray-200"
     >
@@ -81,54 +86,71 @@ export const FileImport = ({ onCancel, onImport }) => {
             <div
               onWheel={onWheelZoom}
               className={buttonClass}
-              title="Zoom level. Click to reset"
-              onClick={() => setZoom(1)}
+              title="Zoom level. Click to reset, scroll to resize"
+              onClick={() => {
+                setZoom(1);
+              }}
             >
-              zoom: {zoom.toFixed(1)}
+              size {zoom.toFixed(1)}
             </div>
           </div>
 
           <div
             onWheel={onWheelZoom}
-            className="overflow-hidden h-full flex-1"
+            className="overflow-hidden h-full w-full flex-1 rounded-sm"
             style={{ imageRendering: "pixelated" }}
             title="Scroll to zoom"
           >
-            <SpriteAnimator
-              className="mb-5"
-              scale={zoom}
-              fps={fps}
-              key={fps}
-              ref={spritePrevRef}
-              sprite={draggedFiles?.spriteSheet?.src}
-              width={draggedFiles?.maxWidth}
-              height={draggedFiles?.maxHeight}
-              onEnd={() => console.log("end")}
-            />
+            <TransformWrapper>
+              <TransformComponent wrapperClass="zoom_wrapper_class_preview_sprite">
+                <SpriteAnimator
+                  className="rounded-sm border-1 border-amber-200/60"
+                  scale={zoom}
+                  fps={fps}
+                  key={fps}
+                  ref={spritePrevRef}
+                  sprite={draggedFiles?.spriteSheet?.src}
+                  width={draggedFiles?.maxWidth}
+                  height={draggedFiles?.maxHeight}
+                />
+              </TransformComponent>
+            </TransformWrapper>
           </div>
-          <div className="flex flex-row gap-3 sticky bottom-0 self-end">
+
+          <div className="flex flex-row gap-3 sticky bottom-0 flex-1 justify-between">
+            <div className="flex gap-2">
+              <button
+                className={buttonClass + " bg-amber-900/80 hover:bg-amber-600"}
+                onClick={() => setDraggedFiles(null)}
+              >
+                {"<- back"}
+              </button>
+            </div>
             <div onWheel={onWheelFps} className={buttonClass} title="Fps. Click to reset" onClick={() => setFps(12)}>
               fps: {fps}
             </div>
+            <div className="flex gap-2">
+              <button className={buttonClass} onClick={() => onCancel()}>
+                cancel
+              </button>
 
-            <button className={buttonClass} onClick={onConfirmDraggedFile}>
-              Open
-            </button>
-            <button className={buttonClass} onClick={() => onCancel()}>
-              cancel
-            </button>
-            <button className={buttonClass} onClick={() => setDraggedFiles(null)}>
-              back
-            </button>
+              <button
+                className={buttonClass + " bg-emerald-600/80 hover:bg-emerald-600"}
+                onClick={onConfirmDraggedFile}
+              >
+                {"Open ->"}
+              </button>
+            </div>
           </div>
         </div>
       ) : (
         <FileUploader
           classes="w-100 min-h-100"
           handleChange={handleDropFile}
+          onSelect={handleDropFile}
           name="file"
           multiple
-          types={fileTypes}
+          // types={fileTypes}
           label="Drop a zip with pngs or multiple png images"
           uploadedLabel="Drop zip"
         />

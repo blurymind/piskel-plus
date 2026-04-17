@@ -148,13 +148,15 @@ export const createSheetFromImages = (
   return image;
 };
 
+// create Images from jszip files or regular files
 export const getImagesFromFiles = (files) => {
   const imageFrames = [];
   let maxWidth = -1;
   let maxHeight = -1;
   return Promise.all(
     Object.values(files)
-      .filter((item) => item.type === "image/png")
+      // jszip files dont have a type property, so we have to do this instead
+      .filter((item) => item.name.toLowerCase().endsWith(".png"))
       .sort((a, b) => a.name - b.name)
       .map((resource) => {
         console.log({ resource });
@@ -173,7 +175,7 @@ export const getImagesFromFiles = (files) => {
 
           try {
             if (resource.async != null) {
-              // this async function is attached by jszip
+              // this async function is attached to jszip files
               resource.async("blob").then((blob) => {
                 const imageUrl = URL.createObjectURL(blob);
                 console.log({ blob, imageUrl });
