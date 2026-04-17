@@ -4,9 +4,9 @@ import { FileUploader } from "react-drag-drop-files";
 import { SpriteAnimator } from "react-sprite-animator";
 
 // todo add image sequence
-const fileTypes = ["ZIP"];
+const fileTypes = ["ZIP", "PNG"];
 
-import { createSheetFromImages, getImagesFromZip } from "./utils";
+import { createSheetFromImages, getImagesFromFiles } from "./utils";
 
 const buttonClass = "border-1 border-gray-400 px-2 rounded-sm hover:bg-gray-400/50";
 export const FileImport = ({ onCancel, onImport }) => {
@@ -15,30 +15,41 @@ export const FileImport = ({ onCancel, onImport }) => {
   const [draggedFiles, setDraggedFiles] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [fps, setFps] = useState(12);
-  const [frame, setFrame] = useState(0);
 
   const onConfirmDraggedFile = () => {
     onImport(draggedFiles, newFileName);
   };
 
-  const handleDropFile = (inFile) => {
+  const handleDropFile = (inFiles) => {
+    const firstFile = inFiles[0];
     const reader = new FileReader();
-    const fileName = inFile.name.split(".")[0];
+    const [fileName, extension] = firstFile.name.split(".");
 
-    reader.addEventListener("load", () => {
-      const zip = new Jszip();
-      zip.loadAsync(reader.result.split(",")[1], { base64: true }).then((zipData) => {
-        getImagesFromZip(zipData).then(({ imageFrames, maxWidth, maxHeight }) => {
-          setNewFileName(fileName);
-          if (imageFrames.length === 0) return;
-          const spriteSheet = createSheetFromImages(imageFrames);
-          setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet });
-          console.log({ imageFrames });
+    console.log({ extension, inFiles });
+    if (extension.toLowerCase() === "zip") {
+      reader.addEventListener("load", () => {
+        const zip = new Jszip();
+        zip.loadAsync(reader.result.split(",")[1], { base64: true }).then((zipData) => {
+          getImagesFromFiles(zipData.files).then(({ imageFrames, maxWidth, maxHeight }) => {
+            setNewFileName(fileName);
+            if (imageFrames.length === 0) return;
+            const spriteSheet = createSheetFromImages(imageFrames);
+            setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet });
+          });
         });
       });
-    });
-    if (inFile) {
-      reader.readAsDataURL(inFile);
+    } else if (extension.toLowerCase() === "png") {
+      getImagesFromFiles(inFiles).then(({ imageFrames, maxWidth, maxHeight }) => {
+        setNewFileName(fileName);
+        console.log({ imageFrames });
+        if (imageFrames.length === 0) return;
+        const spriteSheet = createSheetFromImages(imageFrames);
+        setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet });
+      });
+    }
+
+    if (firstFile && extension.toLowerCase() === "zip") {
+      reader.readAsDataURL(firstFile);
     }
   };
 
@@ -50,11 +61,11 @@ export const FileImport = ({ onCancel, onImport }) => {
       return e.deltaY > 0 ? prev + 1 : prev - 1;
     });
     spritePrevRef?.current?.reset();
-    console.log({ spritePrevRef });
   };
+
   return (
     <div
-      style={{ maxWidth: "90vw", maxHeight: "80vh", minWidth: 100, minHeight: 100 }}
+      style={{ maxWidth: "90vw", maxHeight: "95vh", minWidth: 100, minHeight: 100 }}
       className="w-full h-full bg-gray-900/80 hover:bg-gray-900/90 overflow-hidden rounded-md p-2 border-1 border-gray-200"
     >
       {draggedFiles ? (
@@ -66,7 +77,15 @@ export const FileImport = ({ onCancel, onImport }) => {
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
             ></input>
-            <div>frames x {draggedFiles?.imageFrames?.length}</div>
+            <div>frames x {draggedFiles?.imageFrames?.length}</div>{" "}
+            <div
+              onWheel={onWheelZoom}
+              className={buttonClass}
+              title="Zoom level. Click to reset"
+              onClick={() => setZoom(1)}
+            >
+              zoom: {zoom.toFixed(1)}
+            </div>
           </div>
 
           <div
@@ -88,14 +107,6 @@ export const FileImport = ({ onCancel, onImport }) => {
             />
           </div>
           <div className="flex flex-row gap-3 sticky bottom-0 self-end">
-            <div
-              onWheel={onWheelZoom}
-              className={buttonClass}
-              title="Zoom level. Click to reset"
-              onClick={() => setZoom(1)}
-            >
-              zoom: {zoom.toFixed(1)}
-            </div>
             <div onWheel={onWheelFps} className={buttonClass} title="Fps. Click to reset" onClick={() => setFps(12)}>
               fps: {fps}
             </div>
@@ -116,8 +127,9 @@ export const FileImport = ({ onCancel, onImport }) => {
           classes="w-100 min-h-100"
           handleChange={handleDropFile}
           name="file"
+          multiple
           types={fileTypes}
-          label="Drop zip with pngs"
+          label="Drop a zip with pngs or multiple png images"
           uploadedLabel="Drop zip"
         />
       )}

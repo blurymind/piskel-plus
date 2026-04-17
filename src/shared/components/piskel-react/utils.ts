@@ -131,10 +131,13 @@ export const createSheetFromImages = (
   if (imageFrames.length === 0) return null;
   const c: HTMLCanvasElement = document.createElement("canvas");
   const ctx = c.getContext("2d");
+  console.log(imageFrames);
   const frameWidth = imageFrames[1].width;
   const frameHeight = imageFrames[1].height;
   const width = frameWidth * imageFrames.length;
   c.width = width;
+  c.height = frameHeight;
+
   imageFrames.forEach((image, index) => {
     const x = index * frameWidth;
     ctx.drawImage(image, x, 0, frameWidth, frameHeight);
@@ -145,40 +148,49 @@ export const createSheetFromImages = (
   return image;
 };
 
-export const getImagesFromZip = (zipData) => {
-  const frames = zipData.files;
+export const getImagesFromFiles = (files) => {
   const imageFrames = [];
   let maxWidth = -1;
   let maxHeight = -1;
   return Promise.all(
-    Object.keys(frames)
-      .filter((key) => key.toLocaleLowerCase().endsWith(".png"))
-      .sort()
-      .map((key) => {
+    Object.values(files)
+      .filter((item) => item.type === "image/png")
+      .sort((a, b) => a.name - b.name)
+      .map((resource) => {
+        console.log({ resource });
         return new Promise((resolve) => {
-          const resource = frames[key];
           const image = new Image();
           image.onload = () => {
             imageFrames.push(image);
             maxWidth = Math.max(image.width, maxWidth);
             maxHeight = Math.max(image.height, maxHeight);
-            resolve(key);
+            resolve(1);
           };
           image.onerror = (event) => {
             console.error("Unable to load ", resource, event);
-            resolve(key);
+            resolve(1);
           };
 
           try {
-            resource.async("blob").then((blob) => {
-              const imageUrl = URL.createObjectURL(blob);
-              console.log({ blob, imageUrl });
-              image.src = imageUrl;
-            });
+            if (resource.async != null) {
+              // this async function is attached by jszip
+              resource.async("blob").then((blob) => {
+                const imageUrl = URL.createObjectURL(blob);
+                console.log({ blob, imageUrl });
+                image.src = imageUrl;
+              });
+            } else {
+              // we have to do this on regular files
+              const reader = new FileReader();
+              reader.onload = () => {
+                image.src = reader.result;
+              };
+              reader.readAsDataURL(resource);
+            }
           } catch (error) {
             // Unable to load the image, ignore it.
             console.error("Unable to load ", resource, error);
-            resolve(key);
+            resolve(1);
           }
         });
       }),
