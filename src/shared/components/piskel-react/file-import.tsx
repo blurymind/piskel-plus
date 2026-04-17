@@ -3,7 +3,7 @@ import Jszip from "jszip";
 import { memo, useCallback, useRef, useState } from "react";
 import { FileUploader } from "react-drag-drop-files";
 import { SpriteAnimator } from "react-sprite-animator";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { createSheetFromImages, getImagesFromFiles } from "./utils";
 
@@ -14,6 +14,8 @@ export const FileImport = ({ onCancel, onImport }) => {
   const [draggedFiles, setDraggedFiles] = useState(null);
   const [zoom, setZoom] = useLocalStorage("zoomLevelImport", 1);
   const [fps, setFps] = useState(12);
+  const [isPaused, setIsPaused] = useState(false);
+  const [frame, setFrame] = useState(0);
 
   const onConfirmDraggedFile = () => {
     onImport(draggedFiles, newFileName);
@@ -36,6 +38,7 @@ export const FileImport = ({ onCancel, onImport }) => {
             if (imageFrames.length === 0) return;
             const spriteSheet = createSheetFromImages(imageFrames);
             setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet });
+            setIsPaused(false);
           });
         });
       });
@@ -46,6 +49,7 @@ export const FileImport = ({ onCancel, onImport }) => {
         if (imageFrames.length === 0) return;
         const spriteSheet = createSheetFromImages(imageFrames);
         setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet });
+        setIsPaused(false);
       });
     } else {
       toast.warn("Please drop multiple PNG files or a zip archive containing them", { position: "bottom-left" });
@@ -61,12 +65,23 @@ export const FileImport = ({ onCancel, onImport }) => {
     setZoom((prev) => (e.deltaY > 0 ? prev + 0.1 : prev - 0.1));
   };
   const onWheelFps = (e) => {
+    setIsPaused(false);
     setFps((prev) => {
       return e.deltaY > 0 ? prev + 1 : prev - 1;
     });
     spritePrevRef?.current?.reset();
   };
-
+  const frameCount = draggedFiles?.imageFrames?.length ?? 0;
+  const onWheelFrames = (e) => {
+    setIsPaused(true);
+    setFrame((prev) => {
+      const next = e.deltaY > 0 ? prev + 1 : prev - 1;
+      if (next < 0) return prev;
+      if (next > frameCount - 1) return prev;
+      return next;
+    });
+    spritePrevRef?.current?.reset();
+  };
   return (
     <div
       onDragEnter={() => setDraggedFiles(null)}
@@ -112,6 +127,8 @@ export const FileImport = ({ onCancel, onImport }) => {
                   sprite={draggedFiles?.spriteSheet?.src}
                   width={draggedFiles?.maxWidth}
                   height={draggedFiles?.maxHeight}
+                  shouldAnimate={!isPaused}
+                  frame={frame}
                 />
               </TransformComponent>
             </TransformWrapper>
@@ -126,8 +143,26 @@ export const FileImport = ({ onCancel, onImport }) => {
                 {"<- back"}
               </button>
             </div>
-            <div onWheel={onWheelFps} className={buttonClass} title="Fps. Click to reset" onClick={() => setFps(12)}>
-              fps: {fps}
+            <div className="flex gap-2">
+              <div
+                onWheel={onWheelFps}
+                className={buttonClass}
+                title="Fps. Click to reset, Scroll to change"
+                onClick={() => setFps(12)}
+              >
+                fps: {fps}
+              </div>
+              <div
+                className={buttonClass}
+                onClick={() => {
+                  setIsPaused((p) => !p);
+                  spritePrevRef?.current?.reset();
+                }}
+                onWheel={onWheelFrames}
+                title="Click to Pause/play, Scroll to go through frames"
+              >
+                {!isPaused ? "playing" : "paused @" + frame}
+              </div>
             </div>
             <div className="flex gap-2">
               <button className={buttonClass} onClick={() => onCancel()}>
