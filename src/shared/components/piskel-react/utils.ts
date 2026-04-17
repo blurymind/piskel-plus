@@ -23,6 +23,7 @@ export const usePiskel = ({ piskelRef }) => {
     if (!pskl || !sprite) return;
     const app = pskl.app;
     const piskel = sprite.piskel;
+    console.log({ sprite });
     const descriptor = new pskl.model.piskel.Descriptor(
       piskel.name,
       piskel.description,
@@ -107,7 +108,7 @@ export const usePiskel = ({ piskelRef }) => {
         false,
       );
     const piskelController = pskl.app.piskelController;
-    console.log({ imageFrames });
+    console.log({ imageFrames, piskelFile });
     piskelController.setPiskel(piskelFile, {});
     return piskelFile;
   };

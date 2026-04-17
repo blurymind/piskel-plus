@@ -179,7 +179,7 @@ export const FileImport = ({ onCancel, onImport }) => {
                 className={buttonClass + " bg-emerald-600/80 hover:bg-emerald-600"}
                 onClick={onConfirmDraggedFile}
               >
-                {"Open ->"}
+                {"Import ->"}
               </button>
             </div>
           </div>
