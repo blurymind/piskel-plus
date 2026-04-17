@@ -3,21 +3,19 @@ import { memo, useCallback, useEffect, useImperativeHandle, useRef, useState } f
 import "./index.css";
 import { useLocalStorage } from "@uidotdev/usehooks";
 import { FileUploader } from "react-drag-drop-files";
+import { Popover } from "react-tiny-popover";
 import Menu from "../Menu";
+import FileImport from "./file-import";
 
-const fileTypes = ["ZIP"];
-
-import { getImagesFromZip, sprites, usePiskel } from "./utils";
+import { sprites, usePiskel } from "./utils";
 // copy of src/shared/components/piskel-react/piskel/dest/prod/index.html
 export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref, piskelFile, hideHeader = true }) => {
-  const [newFileName, setNewFileName] = useState("");
-  const [draggedFile, setDraggedFile] = useState(null);
-  const [isDraggingFile, setIsDraggingFile] = useState(false);
   const [currentName, setCurrentName] = useLocalStorage("currentPiskelName", "");
   const [piskels, setPiskels] = useLocalStorage("piskels", {
     mario: { label: sprites.mario.piskel.name, src: sprites.mario },
   });
   const currentPiskel = piskels[currentName];
+  const [isImporterOpen, setIsImporterOpen] = useState(false);
 
   const piskelRef = useRef(null);
   const {
@@ -28,7 +26,7 @@ export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref
     openSettings,
     initPiskelApp,
     getPiskelData,
-    loadZippedImageFramesIntoPiskel,
+    loadImageFramesIntoPiskel,
   } = usePiskel({ piskelRef });
 
   const loadSprite = useCallback(
@@ -58,12 +56,12 @@ export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref
     } else {
       // loadSprite(editedPiskel);
     }
-    const onDragEnd = (e) => {
+    const onPointerUp = (e) => {
       console.log("DRAG", e);
     };
-    window.addEventListener("mouseup", onDragEnd);
+    window.addEventListener("mouseup", onPointerUp);
     return () => {
-      window.removeEventListener("mouseup", onDragEnd);
+      window.removeEventListener("mouseup", onPointerUp);
     };
   }, []);
 
@@ -159,51 +157,22 @@ export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref
     });
   };
 
-  const onConfirmDraggedFile = () => {
-    const newName = "selectedFileName"; // todo put in state
-    loadZippedImageFramesIntoPiskel(draggedFile, newName);
-    setCurrentName(newFileName);
-    // todo
-    // setPiskels(prev=> ({...prev,
-    //       [newName]: {
-    //         label: newFileName,
-    //         src: data
-    //       }
-    // }))
-    setDraggedFile(null);
-    setIsDraggingFile(false);
-  };
-  //  todo https://stuk.github.io/jszip/documentation/api_jszip/load_async.html
-  const handleDropFile = (inFile) => {
-    const reader = new FileReader();
-    const fileName = inFile.name.split(".")[0];
-
-    reader.addEventListener("load", () => {
-      const zip = new Jszip();
-      zip.loadAsync(reader.result.split(",")[1], { base64: true }).then((zipData) => {
-        getImagesFromZip(zipData).then(({ imageData, maxWidth, maxHeight }) => {
-          setNewFileName(fileName);
-          if (imageData.length === 0) return;
-          setDraggedFile({ imageData, maxWidth, maxHeight });
-          console.log({ imageData });
-        });
-      });
-    });
-    if (inFile) {
-      reader.readAsDataURL(inFile);
-    }
-    setIsDraggingFile(false);
+  const onConfirmImportedFile = (importData, fileName) => {
+    console.log({ importData });
+    const piskelFile = loadImageFramesIntoPiskel(importData, fileName);
+    setCurrentName(fileName);
+    setIsImporterOpen(false);
+    setPiskels((prev) => ({
+      ...prev,
+      [fileName]: {
+        label: fileName,
+        src: piskelFile,
+      },
+    }));
   };
 
   return (
-    <div
-      style={{ height: "100%", width: "100%" }}
-      onDragEnter={() => setIsDraggingFile(true)}
-      onDragEnd={() => setIsDraggingFile(false)}
-      onDragLeave={() => setIsDraggingFile(false)}
-      onPointerUp={() => setIsDraggingFile(false)}
-      onDragExit={() => setIsDraggingFile(false)}
-    >
+    <div style={{ height: "100%", width: "100%" }} onPointerCancel={() => console.log("missed")}>
       {/* <div className="absolute bottom-10 right-5 p-2 bg-gray-700 w-50 overflow-hidden" style={{whiteSpace: "nowrap"}} title={currentName}>{currentName}</div> */}
 
       <div className="absolute top-10 rounded-sm w-20 overflow-hidden h-50 bg-gray-600/20">
@@ -224,40 +193,23 @@ export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref
       </div>
 
       <div className="absolute left-0 top-46 bg-gray-900 overflow-hidden">
-        {isDraggingFile ? (
-          <FileUploader
-            classes="w-200 min-h-100"
-            handleChange={handleDropFile}
-            name="file"
-            types={fileTypes}
-            onDrop={() => setIsDraggingFile(false)}
-            label="Drop zip with pngs"
-            uploadedLabel="Drop zip"
-          />
-        ) : (
-          <div
-            className="bg-gray-600 opacity-40 hover:opacity-80 h-10 w-20 p-1"
-            style={{ whiteSpace: "nowrap" }}
-            title="Drop a zip file containing png animation frames"
-          >
-            [Drop zip]
+        <Popover
+          isOpen={isImporterOpen}
+          onClickOutside={() => setIsImporterOpen(false)}
+          clickOutsideCapture
+          transform={{ top: 20, left: 1 }}
+          transformMode="relative"
+          positions={["top", "left", "bottom", "right"]} // preferred positions by priority
+          content={
+            <div>
+              <FileImport onCancel={() => setIsImporterOpen(false)} onImport={onConfirmImportedFile} />
+            </div>
+          }
+        >
+          <div className="p-2" onClick={() => setIsImporterOpen(!isImporterOpen)}>
+            [Import]
           </div>
-        )}
-        {draggedFile && (
-          <div>
-            <input
-              onChange={(e) => {
-                if (e.key === "Enter") {
-                  onConfirmDraggedFile();
-                }
-              }}
-              value={newFileName}
-              onChange={(e) => setNewFileName(e.target.value)}
-            ></input>
-            <img src={draggedFile?.imageData?.[0]?.src}></img> <button onClick={onConfirmDraggedFile}>Open</button>
-            <button onClick={() => setDraggedFile(null)}>cancel</button>
-          </div>
-        )}
+        </Popover>
       </div>
       <div className="absolute top-0 m-2">
         <Menu
@@ -276,9 +228,6 @@ export const PiskelReact = ({ piskelAppPath = "piskel/dest/prod/index.html", ref
         className="editor-frame"
         src={piskelAppPath}
         onLoad={onLoadPiskelApp}
-        onDragEnter={() => setIsDraggingFile(true)}
-        onDragEnd={() => setIsDraggingFile(false)}
-        onDragLeave={() => setIsDraggingFile(false)}
       />
     </div>
   );

@@ -94,38 +94,60 @@ export const usePiskel = ({ piskelRef }) => {
     loadPSprite(piskelData);
   };
 
-  const loadZippedImageFramesIntoPiskel = (
-    { imageData, maxWidth, maxHeight },
+  const loadImageFramesIntoPiskel = (
+    { imageFrames, maxWidth, maxHeight },
     name,
   ) => {
     const pskl = getPiskel();
     const piskelFile =
       pskl.service.ImportService.prototype.createPiskelFromImages_(
-        imageData,
+        imageFrames,
         name,
         maxWidth,
         maxHeight,
         false,
       );
     const piskelController = pskl.app.piskelController;
-    // cb(piskelFile)
+    console.log({ imageFrames });
     piskelController.setPiskel(piskelFile, {});
+    return piskelFile;
   };
+
   return {
     loadPSprite,
     getPiskel,
     savePiskel,
     initPiskelApp,
     createNewPiskel,
-    loadZippedImageFramesIntoPiskel,
+    loadImageFramesIntoPiskel,
     getPiskelData,
     openSettings,
   };
 };
 
+export const createSheetFromImages = (
+  imageFrames: HTMLImageElement[],
+): HTMLImageElement => {
+  if (imageFrames.length === 0) return null;
+  const c: HTMLCanvasElement = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  const frameWidth = imageFrames[1].width;
+  const frameHeight = imageFrames[1].height;
+  const width = frameWidth * imageFrames.length;
+  c.width = width;
+  imageFrames.forEach((image, index) => {
+    const x = index * frameWidth;
+    ctx.drawImage(image, x, 0, frameWidth, frameHeight);
+    console.log({ image, x, index });
+  });
+  const image = new Image();
+  image.src = c.toDataURL();
+  return image;
+};
+
 export const getImagesFromZip = (zipData) => {
   const frames = zipData.files;
-  const imageData = [];
+  const imageFrames = [];
   let maxWidth = -1;
   let maxHeight = -1;
   return Promise.all(
@@ -137,7 +159,7 @@ export const getImagesFromZip = (zipData) => {
           const resource = frames[key];
           const image = new Image();
           image.onload = () => {
-            imageData.push(image);
+            imageFrames.push(image);
             maxWidth = Math.max(image.width, maxWidth);
             maxHeight = Math.max(image.height, maxHeight);
             resolve(key);
@@ -160,7 +182,7 @@ export const getImagesFromZip = (zipData) => {
           }
         });
       }),
-  ).then(() => ({ imageData, maxWidth, maxHeight }));
+  ).then(() => ({ imageFrames, maxWidth, maxHeight }));
 };
 export const sprites = {
   sonic: {
