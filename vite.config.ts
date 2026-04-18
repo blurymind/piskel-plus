@@ -6,8 +6,8 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // const mode = process.env.APP_ENV // This now exists.
 // https://vitejs.dev/config/
-export default defineConfig( ({command, isPreview}) => ({
-  base: command === 'serve' ? '/': 'piskel-react',
+export default defineConfig(({ command, isPreview }) => ({
+  base: command === "serve" ? "/" : "piskel-plus",
   plugins: [
     tanstackRouter({
       target: "react",
@@ -27,9 +27,10 @@ export default defineConfig( ({command, isPreview}) => ({
       manifest: {
         name: "piskel plus",
         short_name: "piskel",
-        description: "Piskel plus. Run piskel without the adds and with nices UX wrapped by react",
+        description:
+          "Piskel plus. Run piskel without the adds and with nices UX wrapped by react",
         theme_color: "#000000",
-        start_url: command === 'serve' ? '/': 'piskel-react',
+        start_url: command === "serve" ? "/" : "piskel-plus",
       },
 
       workbox: {
@@ -37,7 +38,7 @@ export default defineConfig( ({command, isPreview}) => ({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         maximumFileSizeToCacheInBytes: 5 * 1024 ** 2,
-        navigateFallbackDenylist: [/^\/piskel/]
+        // navigateFallbackDenylist: [/^\/piskel/],
       },
 
       devOptions: {
@@ -48,5 +49,4 @@ export default defineConfig( ({command, isPreview}) => ({
       },
     }),
   ],
-
 }));
