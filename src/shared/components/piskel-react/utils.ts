@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import u8 from "to-uint8";
 
 //https://blurymind.github.io/piskel-react
 export const getNewPiskelTemplate = (name: string) => ({
@@ -215,6 +216,39 @@ export const createSheetFromImages = (
   return [image, c];
 };
 
+export const getImagesFromWebPFrames = (frames) => {
+  const imageFrames = [];
+  const maxWidth = frames[0].width;
+  const maxHeight = frames[0].height;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = maxWidth;
+  canvas.height = maxHeight;
+  canvas.style.width = `${maxWidth}px`;
+  canvas.style.height = `${maxHeight}px`;
+  const ctx = canvas.getContext("2d");
+  return Promise.all(
+    frames.map((frame) => {
+      return new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => {
+          imageFrames.push(image);
+          resolve(1);
+        };
+        image.onerror = (event) => {
+          console.error("Unable to load ", image, event);
+          resolve(1);
+        };
+        const imageData = ctx.createImageData(maxWidth, maxHeight);
+        imageData.data.set(new Uint8ClampedArray(frame.data));
+
+        ctx.putImageData(imageData, 0, 0);
+        const url = ctx.canvas.toDataURL("image/png");
+        image.src = url;
+      });
+    }),
+  ).then(() => ({ imageFrames, maxWidth, maxHeight }));
+};
 // create Images from jszip files or regular files
 export const getImagesFromFiles = (files) => {
   const imageFrames = [];
@@ -292,4 +326,9 @@ export const sprites = {
       ],
     },
   },
+};
+
+const supported = [".png", ".zip", ".webp"];
+export const isSupportedFormat = (file): boolean => {
+  return supported.some((type) => file?.name?.toLowerCase().endsWith(type));
 };

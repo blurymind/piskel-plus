@@ -1,13 +1,20 @@
 import { useLocalStorage } from "@uidotdev/usehooks";
 import Jszip from "jszip";
+// import { Image as WebpImage } from "node-webpmux";
 import { memo, useCallback, useRef, useState } from "react";
 import { FileUploader } from "react-drag-drop-files";
 import { SpriteAnimator } from "react-sprite-animator";
 // import { toast } from "react-toastify";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
-import SpriteCutter from "./sprite-cutter";
-import { createSheetFromImages, getImagesFromFiles } from "./utils";
 
+import { decodeAnimation } from "wasm-webp";
+
+import SpriteCutter from "./sprite-cutter";
+import { createSheetFromImages, getImagesFromFiles, getImagesFromWebPFrames, isSupportedFormat } from "./utils";
+
+console.log({ decodeAnimation });
+
+// console.log({ xMux });
 const buttonClass = "border-1 border-gray-400 px-2 rounded-sm opacity-70 hover:opacity-90";
 export const FileImport = ({ onCancel, onImport }) => {
   const spritePrevRef = useRef(null);
@@ -25,15 +32,14 @@ export const FileImport = ({ onCancel, onImport }) => {
 
   const handleDropFile = (inFiles) => {
     console.log(Object.values(inFiles));
-    const firstFile = Object.values(inFiles).find(
-      (file) => file?.name?.toLowerCase().endsWith(".png") || file?.name?.toLowerCase().endsWith(".zip"),
-    );
+    const firstFile = Object.values(inFiles).find(isSupportedFormat);
     if (!firstFile) {
       return;
     }
     const reader = new FileReader();
     const [fileName, extension] = firstFile?.name?.split(".");
 
+    // const onSetImages = () => {}
     console.log({ extension, inFiles });
     if (extension.toLowerCase() === "zip") {
       reader.addEventListener("load", () => {
@@ -59,12 +65,30 @@ export const FileImport = ({ onCancel, onImport }) => {
         setIsPaused(false);
         setFrame(0);
       });
+    } else if (extension.toLowerCase() === "webp") {
+      const reader = new FileReader();
+      reader.addEventListener("load", () => {
+        const data = new Uint8Array(reader.result);
+        console.log({ data });
+        decodeAnimation(data, true).then((frames) => {
+          getImagesFromWebPFrames(frames).then(({ imageFrames, maxWidth, maxHeight }) => {
+            console.log({ imageFrames, maxWidth, maxHeight });
+            setNewFileName(fileName);
+            console.log({ imageFrames });
+            if (imageFrames.length === 0) return;
+            const [spriteSheet, canvas] = createSheetFromImages(imageFrames);
+            setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet, fps, canvas });
+            setIsPaused(false);
+            setFrame(0);
+          });
+        });
+      });
+      reader.readAsArrayBuffer(firstFile);
     } else {
       // toast.warn("Please drop multiple PNG files or a zip archive containing them", { position: "bottom-left" });
     }
 
-    if (firstFile) {
-      console.log({ firstFile });
+    if (firstFile && extension.toLowerCase() !== "webp") {
       reader.readAsDataURL(firstFile);
     }
   };

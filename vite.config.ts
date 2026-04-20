@@ -49,4 +49,10 @@ export default defineConfig(({ command, isPreview }) => ({
       },
     }),
   ],
+  define: {
+    global: {},
+  },
+  optimizeDeps: {
+    exclude: ["wasm-webp"],
+  },
 }));

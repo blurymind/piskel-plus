@@ -5,6 +5,15 @@
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0," />
     <title>Piskel+</title>
+    <script>
+      window.util = {
+        promisify: ()=>{}
+      }
+      window.Buffer = { inject: ()=>{}, alloc : ()=> {}}
+      window.process = {
+        env: {}
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
