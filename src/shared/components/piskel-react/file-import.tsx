@@ -1,4 +1,6 @@
 import { useLocalStorage } from "@uidotdev/usehooks";
+
+import { decompressFrames, parseGIF } from "gifuct-js";
 import Jszip from "jszip";
 // import { Image as WebpImage } from "node-webpmux";
 import { memo, useCallback, useRef, useState } from "react";
@@ -6,11 +8,16 @@ import { FileUploader } from "react-drag-drop-files";
 import { SpriteAnimator } from "react-sprite-animator";
 // import { toast } from "react-toastify";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
-
 import { decodeAnimation } from "wasm-webp";
-
 import SpriteCutter from "./sprite-cutter";
-import { createSheetFromImages, getImagesFromFiles, getImagesFromWebPFrames, isSupportedFormat } from "./utils";
+import {
+  createSheetFromImages,
+  getImagesFromFiles,
+  getImagesFromGifPFrames,
+  getImagesFromWebPFrames,
+  isSupportedFormat,
+  saveImage,
+} from "./utils";
 
 console.log({ decodeAnimation });
 
@@ -38,10 +45,20 @@ export const FileImport = ({ onCancel, onImport }) => {
     }
     const reader = new FileReader();
     const [fileName, extension] = firstFile?.name?.split(".");
+    const format = extension.toLowerCase();
 
     // const onSetImages = () => {}
+    const onLoadFrames = ({ imageFrames, maxWidth, maxHeight }) => {
+      setNewFileName(fileName);
+      console.log({ imageFrames });
+      if (imageFrames.length === 0) return;
+      const [spriteSheet, canvas] = createSheetFromImages(imageFrames);
+      setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet, fps, canvas });
+      setIsPaused(false);
+      setFrame(0);
+    };
     console.log({ extension, inFiles });
-    if (extension.toLowerCase() === "zip") {
+    if (format === "zip") {
       reader.addEventListener("load", () => {
         const zip = new Jszip();
         zip.loadAsync(reader.result.split(",")[1], { base64: true }).then((zipData) => {
@@ -55,41 +72,43 @@ export const FileImport = ({ onCancel, onImport }) => {
           });
         });
       });
-    } else if (extension.toLowerCase() === "png") {
+    } else if (format === "png") {
       getImagesFromFiles(inFiles).then(({ imageFrames, maxWidth, maxHeight }) => {
-        setNewFileName(fileName);
-        console.log({ imageFrames });
-        if (imageFrames.length === 0) return;
-        const [spriteSheet, canvas] = createSheetFromImages(imageFrames);
-        setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet, fps, canvas });
-        setIsPaused(false);
-        setFrame(0);
+        onLoadFrames({ imageFrames, maxWidth, maxHeight });
       });
-    } else if (extension.toLowerCase() === "webp") {
-      const reader = new FileReader();
+    } else if (format === "webp") {
       reader.addEventListener("load", () => {
         const data = new Uint8Array(reader.result);
         console.log({ data });
         decodeAnimation(data, true).then((frames) => {
           getImagesFromWebPFrames(frames).then(({ imageFrames, maxWidth, maxHeight }) => {
-            console.log({ imageFrames, maxWidth, maxHeight });
-            setNewFileName(fileName);
-            console.log({ imageFrames });
-            if (imageFrames.length === 0) return;
-            const [spriteSheet, canvas] = createSheetFromImages(imageFrames);
-            setDraggedFiles({ imageFrames, maxWidth, maxHeight, spriteSheet, fps, canvas });
-            setIsPaused(false);
-            setFrame(0);
+            onLoadFrames({ imageFrames, maxWidth, maxHeight });
           });
         });
       });
-      reader.readAsArrayBuffer(firstFile);
+    } else if (format === "gif") {
+      reader.addEventListener("load", () => {
+        const data = reader.result;
+
+        const gif = parseGIF(data);
+        const frames = decompressFrames(gif, true);
+        getImagesFromGifPFrames(frames).then(({ imageFrames, maxWidth, maxHeight }) => {
+          console.log({ imageFrames, maxWidth, maxHeight });
+          onLoadFrames({ imageFrames, maxWidth, maxHeight });
+        });
+      });
     } else {
       // toast.warn("Please drop multiple PNG files or a zip archive containing them", { position: "bottom-left" });
     }
 
-    if (firstFile && extension.toLowerCase() !== "webp") {
-      reader.readAsDataURL(firstFile);
+    if (firstFile) {
+      if (format === "webp" || format === "gif") {
+        reader.readAsArrayBuffer(firstFile);
+
+        // const test = decodeGif(firstFile);
+      } else {
+        reader.readAsDataURL(firstFile);
+      }
     }
   };
 
@@ -113,6 +132,10 @@ export const FileImport = ({ onCancel, onImport }) => {
       return next;
     });
     spritePrevRef?.current?.reset();
+  };
+
+  const onSaveSpriteSheet = () => {
+    saveImage(draggedFiles?.spriteSheet, newFileName);
   };
 
   console.log({ draggedFiles });
@@ -152,7 +175,7 @@ export const FileImport = ({ onCancel, onImport }) => {
               <div
                 onWheel={onWheelZoom}
                 className="overflow-hidden h-full w-full flex-1 rounded-sm"
-                style={{ imageRendering: "pixelated" }}
+                // style={{ imageRendering: "pixelated" }}
                 title="Scroll to zoom"
               >
                 <TransformWrapper>
@@ -215,6 +238,13 @@ export const FileImport = ({ onCancel, onImport }) => {
                 onClick={() => setDraggedFiles(null)}
               >
                 {"<- back"}
+              </button>
+              <button
+                className={buttonClass + " bg-blue-500 hover:bg-blue-600"}
+                title="Save as spritesheet"
+                onClick={onSaveSpriteSheet}
+              >
+                {"save"}
               </button>
             </div>
             {isASpriteSheet ? null : (

@@ -193,26 +193,36 @@ export const createImagesFromSheet = (
   return { imageFrames, maxWidth, maxHeight };
 };
 
+const LIMIT_FRAMES = 100;
+export const COLS = 16;
 export const createSheetFromImages = (
   imageFrames: HTMLImageElement[],
 ): [HTMLImageElement, HTMLCanvasElement] => {
   if (imageFrames.length === 0) return [null, null];
   const c: HTMLCanvasElement = document.createElement("canvas");
   const ctx = c.getContext("2d");
-  console.log(imageFrames);
   const frameWidth = imageFrames[0].width;
   const frameHeight = imageFrames[0].height;
-  const width = frameWidth * imageFrames.length;
-  c.width = width;
-  c.height = frameHeight;
 
+  const columns = Math.min(COLS, imageFrames.length);
+  const countToRender = Math.min(LIMIT_FRAMES, imageFrames.length);
+  const width = frameWidth * columns;
+  const numberOfRows = Math.floor(countToRender / columns);
+  const height = numberOfRows * frameHeight;
+  console.log({ width, frameHeight, numberOfRows, height });
+  c.width = width;
+  c.height = height;
   imageFrames.forEach((image, index) => {
-    const x = index * frameWidth;
-    ctx.drawImage(image, x, 0, frameWidth, frameHeight);
-    console.log({ image, x, index });
+    if (index > countToRender) return;
+    const col = index % columns;
+    const row = Math.floor(index / columns);
+    const x = col * frameWidth;
+    const y = row * frameHeight;
+    ctx.drawImage(image, x, y, frameWidth, frameHeight);
   });
   const image = new Image();
-  image.src = c.toDataURL();
+  console.log({ source: c.toDataURL() });
+  image.src = c.toDataURL(); // todo this fails because canvas has a width limit
   return [image, c];
 };
 
@@ -244,6 +254,87 @@ export const getImagesFromWebPFrames = (frames) => {
 
         ctx.putImageData(imageData, 0, 0);
         const url = ctx.canvas.toDataURL("image/png");
+        image.src = url;
+      });
+    }),
+  ).then(() => ({ imageFrames, maxWidth, maxHeight }));
+};
+
+export const getImagesFromGifPFrames = (frames) => {
+  let frameImageData;
+  const c = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  c.width = frames[0].dims.width;
+  c.height = frames[0].dims.height;
+  const maxWidth = c.width;
+  const maxHeight = c.height;
+  const gifCanvas: HTMLCanvasElement = document.createElement("canvas");
+  gifCanvas.width = c.width;
+  gifCanvas.height = c.height;
+  const gifCtx = gifCanvas.getContext("2d");
+  const tempCanvas: HTMLCanvasElement = document.createElement("canvas");
+  const tempCtx = tempCanvas.getContext("2d");
+  let needsDisposal = false;
+  const imageFrames = [];
+
+  return Promise.all(
+    frames.map((frame) => {
+      return new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => {
+          imageFrames.push(image);
+          resolve(1);
+        };
+        image.onerror = (event) => {
+          console.error("Unable to load ", image, event);
+          resolve(1);
+        };
+        ///////////////////////////
+
+        /// render
+        if (needsDisposal) {
+          gifCtx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+          needsDisposal = false;
+        }
+        /// draw patch
+        const dims = frame.dims;
+        if (
+          !frameImageData ||
+          dims.width != frameImageData.width ||
+          dims.height != frameImageData.height
+        ) {
+          tempCanvas.width = dims.width;
+          tempCanvas.height = dims.height;
+          frameImageData = tempCtx.createImageData(dims.width, dims.height);
+        }
+
+        // set the patch data as an override
+        frameImageData.data.set(frame.patch);
+
+        // draw the patch back over the canvas
+        tempCtx.putImageData(frameImageData, 0, 0);
+        gifCtx.drawImage(tempCanvas, dims.left, dims.top);
+        /// manipulate
+        const imageData = gifCtx.getImageData(
+          0,
+          0,
+          gifCanvas.width,
+          gifCanvas.height,
+        );
+
+        const pixelsX = 5 + Math.floor(c.width - 5);
+        const pixelsY = (pixelsX * c.height) / c.width;
+
+        ctx.putImageData(imageData, 0, 0);
+        ctx.drawImage(c, 0, 0, c.width, c.height, 0, 0, pixelsX, pixelsY);
+        ctx.drawImage(c, 0, 0, pixelsX, pixelsY, 0, 0, c.width, c.height);
+
+        /// render
+        if (frame.disposalType === 2) {
+          needsDisposal = true;
+        }
+
+        const url = gifCanvas.toDataURL("image/png");
         image.src = url;
       });
     }),
@@ -328,7 +419,23 @@ export const sprites = {
   },
 };
 
-const supported = [".png", ".zip", ".webp"];
+const supported = [".png", ".zip", ".webp", ".gif"];
 export const isSupportedFormat = (file): boolean => {
   return supported.some((type) => file?.name?.toLowerCase().endsWith(type));
+};
+
+export const saveImage = (image, name: string) => {
+  const c: HTMLCanvasElement = document.createElement("canvas");
+  const ctx = c.getContext("2d");
+  c.width = image.width;
+  c.height = image.height;
+  ctx.drawImage(image, 0, 0, image.width, image.height);
+  window.location.href = c.toDataURL("image/png");
+  const gh = c.toDataURL("png");
+
+  const a = document.createElement("a");
+  a.href = gh;
+  a.download = `${name}.png`;
+
+  a.click();
 };
